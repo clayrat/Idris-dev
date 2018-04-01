@@ -6,17 +6,37 @@
 ||| combination of arguments is.
 module Control.Ordinals
 
+import Data.Vect
+
 %default total
 %access public export
 
+||| Proofs that `v` doesn't have a leading zero.
+data NoLeadZ : (v:Vect n Nat) -> Type where
+  NoLeadZNil  : NoLeadZ Nil
+  NoLeadZCons : IsSucc m -> NoLeadZ (m :: _)
 
--- The ordinal numbers less than omega^omega, that is, those expressible 
--- as a sum of powers of omega with natural coefficients.
--- They are well-ordered, and so well-founded, with degree-lexicographical order.
-data SmallOrdinal : Type where
-  OrdZ  : SmallOrdinal
-  OrdS  : Nat -> SmallOrdinal -> SmallOrdinal
+||| The ordinal numbers less than omega^omega, that is, those expressible 
+||| as a sum of powers of omega with natural coefficients.
+||| They are well-ordered, and so well-founded, with degree-lexicographical order.
+record SmallOrdinal where
+  constructor MkSmallOrdinal
+  degree : Nat
+  coefs : Vect degree Nat
+  {proper : NoLeadZ coefs}
 
+||| Wraps a properly formed `Vect _ Nat` of coefficients of powers of omega as a small ordinal.
+smallOrdinal : (coefs:Vect _ Nat) -> {auto proper : NoLeadZ coefs} -> SmallOrdinal
+smallOrdinal coefs {proper} = MkSmallOrdinal _ coefs {proper}
+
+||| Casts a Vect _ Nat to a small ordinal, stripping any leading zeroes.
+toSmallOrdinal : (coefs:Vect deg Nat) -> SmallOrdinal
+toSmallOrdinal [] = smallOrdinal []
+toSmallOrdinal (Z :: ns) = toSmallOrdinal ns
+toSmallOrdinal ((S n) :: ns) = smallOrdinal ((S n) :: ns)
+
+
+{-
 Eq SmallOrdinal where
   OrdZ            == OrdZ            = True
   (OrdS Z     xs) == OrdZ            = xs == OrdZ
@@ -38,6 +58,7 @@ Ord SmallOrdinal where
   compare OrdZ            (OrdS (S k) ys) = LT
   compare (OrdS x     xs) (OrdS y     ys) = (compare (length xs) (length ys) `thenCompare`
                                             (compare x y `thenCompare` compare xs ys))
+                                            -}
 
 -- The ordinals with a finite arithmetic representation.
 -- In a way, these can be thought of as the "finite-dimensional" ordinals, where 
