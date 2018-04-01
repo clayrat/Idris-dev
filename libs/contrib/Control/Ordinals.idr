@@ -4,16 +4,7 @@
 ||| functions where the decreasing argument can't be mapped monotonically
 ||| into Nat, or where no single argument is strictly decreasing, but some
 ||| combination of arguments is.
-module Prelude.Ordinals
-
-import Prelude.Nat
-import Prelude.Algebra
-import Prelude.Basics
-import Prelude.Bool
-import Prelude.Cast
-import Prelude.Interfaces
-import Prelude.Uninhabited
-import Prelude.List
+module Control.Ordinals
 
 %default total
 %access public export
