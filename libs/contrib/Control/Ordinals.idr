@@ -61,31 +61,3 @@ Ord SmallOrdinal where
     compare x (MkSmallOrdinal (degree x) v) | Yes Refl = compare (coefs x) v
     | No _ = compare (degree x) (degree y) 
 
--- The ordinals with a finite arithmetic representation.
--- In a way, these can be thought of as the "finite-dimensional" ordinals, where 
--- dimensions 0, 1, 2 correspond to (), Nat, and SmallOrdinal, respectively
-data ArithOrdinal : (dim:Nat) -> Type where
-  AOrdZ : ArithOrdinal dim
-  AOrdS : ArithOrdinal dim -> ArithOrdinal (S dim) -> ArithOrdinal (S dim)
-
--- TODO: Add type-level ordering for ArithOrdinal. 
---       Possibly optimize ArithOrdinal for speed by adding knowledge and
---       reordering recursion direction.
-{-
-Eq (ArithOrdinal dim) where
-  AOrdZ == AOrdZ = True
-  (AOrdS x xs) == AOrdZ = x == AOrdZ && xs == AOrdZ
-  AOrdZ == (AOrdS y ys) = AOrdZ == y && AOrdZ == ys
-  (AOrdS x xs) == (AOrdS y ys) = x == y && xs == ys
-
-mutual 
-  Ordinal (ArithOrdinal dim) where
-    degree AOrdZ = Z
-    degree (AOrdS x y) = S (degree y)
-
-  Ord (ArithOrdinal dim) where
-    compare x AOrdZ = if (x == AOrdZ) then EQ else GT
-    compare AOrdZ y = if (AOrdZ == y) then EQ else LT
-    compare (AOrdS x xs) (AOrdS y ys) 
-        = (compare (degree xs) (degree ys) `thenCompare`(compare x y `thenCompare` compare xs ys))
--}
