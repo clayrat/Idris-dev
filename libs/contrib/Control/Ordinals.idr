@@ -35,16 +35,6 @@ toSmallOrdinal [] = smallOrdinal []
 toSmallOrdinal (Z :: ns) = toSmallOrdinal ns
 toSmallOrdinal ((S n) :: ns) = smallOrdinal ((S n) :: ns)
 
-||| Lemma: Equal Vectors have equal tails. Doesn't assume equal length.
-||| Should be moved to Data.Vect at some point.
-vectTailInjective : {xs:Vect n a} -> {ys:Vect m a} -> {x,y:a} -> (x::xs)=(y::ys) -> xs=ys
-vectTailInjective {xs=xs} {ys=xs} {x=x} {y=x} Refl = Refl
-
-||| Lemma: Equal vectors have equal length.
-||| Should be moved to Data.Vect at some point.
-vectLengthInjective : {v:Vect n a} -> {w:Vect m a} -> v=w -> n=m
-vectLengthInjective {v=w} {w=w} Refl = Refl
-
 ||| Shows that the degree of a small ordinal is the length of its vector of coefficients.
 degreeIsLength : {deg:Nat} -> {v:Vect deg Nat} -> (oo:SmallOrdinal) -> 
                  (v = coefs oo) -> (deg = degree oo)
