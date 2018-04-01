@@ -29,12 +29,12 @@ data SmallOrdinal : Type where
   OrdS  : Nat -> SmallOrdinal -> SmallOrdinal
 
 Eq SmallOrdinal where
-  OrdZ == OrdZ = True
-  (OrdS Z xs) == OrdZ = xs == OrdZ
-  (OrdS (S k) xs) == OrdZ = False
-  OrdZ == (OrdS Z ys) = OrdZ == ys
-  OrdZ == (OrdS (S k) ys) = False
-  (OrdS x xs) == (OrdS y ys) = x == y && xs == ys
+  OrdZ            == OrdZ            = True
+  (OrdS Z     xs) == OrdZ            = xs == OrdZ
+  (OrdS (S k) xs) == OrdZ            = False
+  OrdZ            == (OrdS Z     ys) = OrdZ == ys
+  OrdZ            == (OrdS (S k) ys) = False
+  (OrdS x     xs) == (OrdS y     ys) = x == y && xs == ys
 
 mutual 
   Ordinal SmallOrdinal where
@@ -42,13 +42,13 @@ mutual
     degree (OrdS x xs) = S (degree xs)
 
   Ord SmallOrdinal where
-    compare OrdZ OrdZ = EQ
-    compare OrdZ (OrdS Z ys) = compare OrdZ ys
-    compare OrdZ (OrdS (S k) x) = LT
-    compare (OrdS Z xs) OrdZ = compare xs OrdZ
-    compare (OrdS (S k) x) OrdZ = GT
-    compare (OrdS x xs) (OrdS y ys)
-           = (compare (degree xs) (degree ys) `thenCompare`(compare x y `thenCompare` compare xs ys))
+    compare OrdZ            OrdZ            = EQ
+    compare (OrdS Z     xs) OrdZ            = compare xs OrdZ
+    compare (OrdS (S k) xs) OrdZ            = GT
+    compare OrdZ            (OrdS Z     ys) = compare OrdZ ys
+    compare OrdZ            (OrdS (S k) ys) = LT
+    compare (OrdS x     xs) (OrdS y     ys) = (compare (degree xs) (degree ys) `thenCompare`
+                                            (compare x y `thenCompare` compare xs ys))
 
 -- The ordinals with a finite arithmetic representation.
 -- In a way, these can be thought of as the finite-dimensional ordinals, where 
