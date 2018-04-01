@@ -28,6 +28,28 @@ data SmallOrdinal : Type where
   OrdZ  : SmallOrdinal
   OrdS  : Nat -> SmallOrdinal -> SmallOrdinal
 
+Eq SmallOrdinal where
+  OrdZ == OrdZ = True
+  (OrdS Z xs) == OrdZ = xs == OrdZ
+  (OrdS (S k) xs) == OrdZ = False
+  OrdZ == (OrdS Z ys) = OrdZ == ys
+  OrdZ == (OrdS (S k) ys) = False
+  (OrdS x xs) == (OrdS y ys) = x == y && xs == ys
+
+mutual 
+  Ordinal SmallOrdinal where
+    degree OrdZ = Z
+    degree (OrdS x xs) = S (degree xs)
+
+  Ord SmallOrdinal where
+    compare OrdZ OrdZ = EQ
+    compare OrdZ (OrdS Z ys) = compare OrdZ ys
+    compare OrdZ (OrdS (S k) x) = LT
+    compare (OrdS Z xs) OrdZ = compare xs OrdZ
+    compare (OrdS (S k) x) OrdZ = GT
+    compare (OrdS x xs) (OrdS y ys)
+           = (compare (degree xs) (degree ys) `thenCompare`(compare x y `thenCompare` compare xs ys))
+
 -- The ordinals with a finite arithmetic representation.
 -- In a way, these can be thought of as the finite-dimensional ordinals, where 
 -- dimensions 0, 1, 2 correspond to (), Nat, and SmallOrdinal, respectively
@@ -35,7 +57,10 @@ data ArithOrdinal : (dim:Nat) -> Type where
   AOrdZ : ArithOrdinal dim
   AOrdS : ArithOrdinal dim -> ArithOrdinal (S dim) -> ArithOrdinal (S dim)
 
--- TODO: Add type-level ordering for ArithOrdinal
+-- TODO: Add type-level ordering for ArithOrdinal. 
+--       Possibly optimize ArithOrdinal for speed by adding knowledge and
+--       reordering recursion direction.
+{-
 Eq (ArithOrdinal dim) where
   AOrdZ == AOrdZ = True
   (AOrdS x xs) == AOrdZ = x == AOrdZ && xs == AOrdZ
@@ -52,4 +77,4 @@ mutual
     compare AOrdZ y = if (AOrdZ == y) then EQ else LT
     compare (AOrdS x xs) (AOrdS y ys) 
         = (compare (degree xs) (degree ys) `thenCompare`(compare x y `thenCompare` compare xs ys))
-
+-}
