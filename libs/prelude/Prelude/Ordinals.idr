@@ -18,8 +18,6 @@ import Prelude.List
 %default total
 %access public export
 
-interface Ord a => Ordinal (a:Type) where
-  degree : a -> Nat
 
 -- The ordinal numbers less than omega^omega, that is, those expressible 
 -- as a sum of powers of omega with natural coefficients.
@@ -36,22 +34,22 @@ Eq SmallOrdinal where
   OrdZ            == (OrdS (S k) ys) = False
   (OrdS x     xs) == (OrdS y     ys) = x == y && xs == ys
 
-mutual 
-  Ordinal SmallOrdinal where
-    degree OrdZ = Z
-    degree (OrdS x xs) = S (degree xs)
+namespace SmallOrdinal
+  length : SmallOrdinal -> Nat
+  length OrdZ = Z
+  length (OrdS _ xs) = length xs
 
-  Ord SmallOrdinal where
-    compare OrdZ            OrdZ            = EQ
-    compare (OrdS Z     xs) OrdZ            = compare xs OrdZ
-    compare (OrdS (S k) xs) OrdZ            = GT
-    compare OrdZ            (OrdS Z     ys) = compare OrdZ ys
-    compare OrdZ            (OrdS (S k) ys) = LT
-    compare (OrdS x     xs) (OrdS y     ys) = (compare (degree xs) (degree ys) `thenCompare`
+Ord SmallOrdinal where
+  compare OrdZ            OrdZ            = EQ
+  compare (OrdS Z     xs) OrdZ            = compare xs OrdZ
+  compare (OrdS (S k) xs) OrdZ            = GT
+  compare OrdZ            (OrdS Z     ys) = compare OrdZ ys
+  compare OrdZ            (OrdS (S k) ys) = LT
+  compare (OrdS x     xs) (OrdS y     ys) = (compare (length xs) (length ys) `thenCompare`
                                             (compare x y `thenCompare` compare xs ys))
 
 -- The ordinals with a finite arithmetic representation.
--- In a way, these can be thought of as the finite-dimensional ordinals, where 
+-- In a way, these can be thought of as the "finite-dimensional" ordinals, where 
 -- dimensions 0, 1, 2 correspond to (), Nat, and SmallOrdinal, respectively
 data ArithOrdinal : (dim:Nat) -> Type where
   AOrdZ : ArithOrdinal dim
