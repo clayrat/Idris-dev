@@ -35,30 +35,31 @@ toSmallOrdinal [] = smallOrdinal []
 toSmallOrdinal (Z :: ns) = toSmallOrdinal ns
 toSmallOrdinal ((S n) :: ns) = smallOrdinal ((S n) :: ns)
 
+||| Lemma: Equal Vectors have equal tails. Doesn't assume equal length.
+||| Should be moved to Data.Vect at some point.
+vectTailInjective : {xs:Vect n a} -> {ys:Vect m a} -> {x,y:a} -> (x::xs)=(y::ys) -> xs=ys
+vectTailInjective {xs=xs} {ys=xs} {x=x} {y=x} Refl = Refl
 
-{-
+||| Lemma: Equal vectors have equal length.
+||| Should be moved to Data.Vect at some point.
+vectLengthInjective : {v:Vect n a} -> {w:Vect m a} -> v=w -> n=m
+vectLengthInjective {v=w} {w=w} Refl = Refl
+
+||| Shows that the degree of a small ordinal is the length of its vector of coefficients.
+degreeIsLength : {deg:Nat} -> {v:Vect deg Nat} -> (oo:SmallOrdinal) -> 
+                 (v = coefs oo) -> (deg = degree oo)
+degreeIsLength {deg=(degree oo)} {v=(coefs oo)} oo Refl = Refl
+
+
 Eq SmallOrdinal where
-  OrdZ            == OrdZ            = True
-  (OrdS Z     xs) == OrdZ            = xs == OrdZ
-  (OrdS (S k) xs) == OrdZ            = False
-  OrdZ            == (OrdS Z     ys) = OrdZ == ys
-  OrdZ            == (OrdS (S k) ys) = False
-  (OrdS x     xs) == (OrdS y     ys) = x == y && xs == ys
-
-namespace SmallOrdinal
-  length : SmallOrdinal -> Nat
-  length OrdZ = Z
-  length (OrdS _ xs) = length xs
+  (==) x y with (decEq (degree x) (degree y)) 
+    (==) x (MkSmallOrdinal (degree x) v) | Yes Refl = coefs x == v
+    | No _ = False
 
 Ord SmallOrdinal where
-  compare OrdZ            OrdZ            = EQ
-  compare (OrdS Z     xs) OrdZ            = compare xs OrdZ
-  compare (OrdS (S k) xs) OrdZ            = GT
-  compare OrdZ            (OrdS Z     ys) = compare OrdZ ys
-  compare OrdZ            (OrdS (S k) ys) = LT
-  compare (OrdS x     xs) (OrdS y     ys) = (compare (length xs) (length ys) `thenCompare`
-                                            (compare x y `thenCompare` compare xs ys))
-                                            -}
+  compare x y with (decEq (degree x) (degree y)) 
+    compare x (MkSmallOrdinal (degree x) v) | Yes Refl = compare (coefs x) v
+    | No _ = compare (degree x) (degree y) 
 
 -- The ordinals with a finite arithmetic representation.
 -- In a way, these can be thought of as the "finite-dimensional" ordinals, where 
