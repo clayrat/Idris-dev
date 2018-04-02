@@ -73,10 +73,13 @@ data SOrdLT  : (a, b : SmallOrdinal) -> Type where
 Uninhabited (VLT _ []) where
   uninhabited lt impossible
 
-||| Nothing is smaller than zero
 Uninhabited (SOrdLT _ (MkSmallOrd _ [])) where
   uninhabited (SOrdLTDegree deglt) = uninhabited deglt
   uninhabited (SOrdLTCoefs coefslt) = uninhabited coefslt
+
+||| Nothing is smaller than zero
+noSOrdLTzero : Not (SOrdLT _ (MkSmallOrd _ [])) 
+noSOrdLTzero = uninhabited
 
 ||| Strict greater than
 total SOrdGT : SmallOrdinal -> SmallOrdinal -> Type
@@ -122,16 +125,43 @@ elimSOrdLTCoefs : (MkSmallOrd n xs `SOrdLT` MkSmallOrd n ys) -> (xs `VLT` ys)
 elimSOrdLTCoefs (SOrdLTCoefs vlt) = vlt
 elimSOrdLTCoefs (SOrdLTDegree lt) = void $ uninhabited lt
 
+||| A decision procedure for `VLT`
+isVLT : (xs, ys : Vect n Nat) -> Dec (xs `VLT` ys)
+isVLT [] [] = No uninhabited
+isVLT (x :: xs) (y :: ys) with (isLTE (S x) y)
+  isVLT (x :: xs) (y :: ys) | (Yes lt) = Yes (VLTHead lt)
+  isVLT (x :: xs) (y :: ys) | (No nlt) with (decEq x y)
+    isVLT (y :: xs) (y :: ys) | (No nlt) | (Yes Refl) with (isVLT xs ys)
+      isVLT (y :: xs) (y :: ys) | (No nlt) | (Yes Refl) | (Yes vlt) = Yes (VLTTail vlt)
+      isVLT (y :: xs) (y :: ys) | (No nlt) | (Yes Refl) | (No nvlt) = No (\vlt=>
+                 case vlt of
+                      (VLTHead headlt) => nlt headlt
+                      (VLTTail taillt) => nvlt taillt)
+    isVLT (x :: xs) (y :: ys) | (No nlt) | (No neq) = No (\vlt=>
+               case vlt of
+                    (VLTHead headlt) => nlt headlt
+                    (VLTTail taillt) => neq Refl)
+    
+
+
+||| A decision procedure for `SOrdLT`
+isSOrdLT : (a, b : SmallOrdinal) -> Dec (a `SOrdLT` b)
+isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) with (isLTE (S n) m)
+  isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) | (Yes lt) = Yes $ SOrdLTDegree lt
+  isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) | (No nlt) with (decEq n m)
+    isSOrdLT (MkSmallOrd m xs) (MkSmallOrd m ys) | (No nlt) | (Yes Refl) with (isVLT xs ys)
+      isSOrdLT (MkSmallOrd m xs) (MkSmallOrd m ys) | (No nlt) | _ | (Yes vlt) = Yes (SOrdLTCoefs vlt)
+      isSOrdLT (MkSmallOrd m xs) (MkSmallOrd m ys) | (No nlt) | _ | (No nvlt) = No (\solt=>
+                                                     case solt of
+                                                          (SOrdLTDegree deglt) => nlt deglt
+                                                          (SOrdLTCoefs coefslt) => nvlt coefslt)
+    isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) | (No nlt) | (No neq) = No (\solt=>
+                                                   case solt of
+                                                        (SOrdLTDegree deglt) => nlt deglt
+                                                        (SOrdLTCoefs coefslt) => neq Refl)
+
+
 {-
-
-  SOrdLTDegree : {auto deglt: LT n m} -> SOrdLT (MkSmallOrd n _) (MkSmallOrd m _) 
-  ||| If degrees are equal, the coefficients determine order.
-  SOrdLTCoefs  : {auto coefslt:VLT xs ys} -> SOrdLT (MkSmallOrd n xs) (MkSmallOrd n ys)
-||| If two numbers are ordered, their predecessors are too
-fromLteSucc (LTESucc x) = x
-
-||| A decision procedure for `LTE`
-isLTE : (m, n : Nat) -> Dec (m `LTE` n)
 isLTE Z n = Yes LTEZero
 isLTE (S k) Z = No succNotLTEzero
 isLTE (S k) (S j) with (isLTE k j)
