@@ -107,20 +107,6 @@ elimSOrdLTDegree : (MkSmallOrd n xs `SOrdLT` MkSmallOrd m ys) -> (n `LTE` m)
 elimSOrdLTDegree (SOrdLTDegree (LTESucc x)) = lteSuccRight x
 elimSOrdLTDegree {n = n} {m = n} (SOrdLTCoefs _) = lteRefl
 
--- "obvious" proof search produced this on elimSOrdLTDegree (SOrdLTCoefs {coefslt}). 
--- No, it doesn't check. Report at some later date.
-  {-
-  LTESucc (elimSOrdLTDegree {ys = ([__])}
-                          {{ proper 514 } = ([__])}
-                          {xs = ([__])}
-                          {{ proper 511 } = ([__])}
-                          (SOrdLTDegree {{ coefs 513 } = ([__])}
-                                        {{ proper 514 } = ([__])}
-                                        {{ coefs 510 } = ([__])}
-                                        {{ proper 511 } = ([__])}))
-            -}
-
-
 --- Move this to Prelude.Nat eventually
 Uninhabited (LTE (S n) n) where
   uninhabited (LTESucc lte) = uninhabited lte
