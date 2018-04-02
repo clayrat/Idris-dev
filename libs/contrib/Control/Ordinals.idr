@@ -77,19 +77,20 @@ Uninhabited (VLT _ []) where
 Uninhabited (SOrdLT _ (MkSmallOrdinal _ [])) where
   uninhabited (SOrdLTDegree {deglt}) = uninhabited deglt
   uninhabited (SOrdLTCoefs {coefslt}) = uninhabited coefslt
-{-
-
-||| Greater than or equal to
-total GTE : Nat -> Nat -> Type
-GTE left right = LTE right left
-
-||| Strict less than
-total LT : Nat -> Nat -> Type
-LT left right = LTE (S left) right
 
 ||| Strict greater than
-total GT : Nat -> Nat -> Type
-GT left right = LT right left
+total SOrdGT : SmallOrdinal -> SmallOrdinal -> Type
+SOrdGT left right = SOrdLT right left
+
+||| Less than or equal to
+total SOrdLTE : SmallOrdinal -> SmallOrdinal -> Type
+SOrdLTE left right = Either (SOrdLT left right) (left = right)
+
+||| Greater than or equal to
+total SOrdGTE : SmallOrdinal -> SmallOrdinal -> Type
+SOrdGTE left right = SOrdLTE right left
+
+{-
 
 ||| A successor is never less than or equal zero
 succNotLTEzero : Not (S m `LTE` Z)
