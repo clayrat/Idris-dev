@@ -99,13 +99,30 @@ consNotSOrdLTzero lt = uninhabited lt
 consNotSOrdLTEzero : Not ((MkSmallOrd _ (_::_) )`SOrdLTE` (MkSmallOrd _ []))
 consNotSOrdLTEzero (Left lt) = uninhabited lt
 consNotSOrdLTEzero (Right Refl) impossible
+
+elimSOrdLTDegree : (MkSmallOrd n xs `SOrdLT` MkSmallOrd m ys) -> (n `LTE` m)
+elimSOrdLTDegree (SOrdLTDegree {deglt = (LTESucc x)}) = lteSuccRight x
+elimSOrdLTDegree {n = n} {m = n} SOrdLTCoefs = lteRefl
+
+-- "obvious" proof search produced this on elimSOrdLTDegree (SOrdLTCoefs {coefslt}). 
+-- No, it doesn't check. Report at some later date.
+  {-
+  LTESucc (elimSOrdLTDegree {ys = ([__])}
+                          {{ proper 514 } = ([__])}
+                          {xs = ([__])}
+                          {{ proper 511 } = ([__])}
+                          (SOrdLTDegree {{ coefs 513 } = ([__])}
+                                        {{ proper 514 } = ([__])}
+                                        {{ coefs 510 } = ([__])}
+                                        {{ proper 511 } = ([__])}))
+            -}
+
 {-
 
   SOrdLTDegree : {auto deglt: LT n m} -> SOrdLT (MkSmallOrd n _) (MkSmallOrd m _) 
   ||| If degrees are equal, the coefficients determine order.
   SOrdLTCoefs  : {auto coefslt:VLT xs ys} -> SOrdLT (MkSmallOrd n xs) (MkSmallOrd n ys)
 ||| If two numbers are ordered, their predecessors are too
-fromLteSucc : (S m `LTE` S n) -> (m `LTE` n)
 fromLteSucc (LTESucc x) = x
 
 ||| A decision procedure for `LTE`
