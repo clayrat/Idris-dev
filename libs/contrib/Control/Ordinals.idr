@@ -161,22 +161,16 @@ isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) with (isLTE (S n) m)
                                                         (SOrdLTCoefs coefslt) => neq Refl)
 
 
+||| `SOrdLTE` is reflexive.
+sOrdLteRefl : SOrdLTE a a
+sOrdLteRefl = Right Refl
+
 {-
-isLTE Z n = Yes LTEZero
-isLTE (S k) Z = No succNotLTEzero
-isLTE (S k) (S j) with (isLTE k j)
-  isLTE (S k) (S j) | (Yes prf) = Yes (LTESucc prf)
-  isLTE (S k) (S j) | (No contra) = No (contra . fromLteSucc)
-
-||| `LTE` is reflexive.
-lteRefl : LTE n n
-lteRefl {n = Z}   = LTEZero
-lteRefl {n = S k} = LTESucc lteRefl
-
-||| n < m implies n < m + 1
+||| a < b implies a < b + 1
 lteSuccRight : LTE n m -> LTE n (S m)
 lteSuccRight LTEZero     = LTEZero
 lteSuccRight (LTESucc x) = LTESucc (lteSuccRight x)
+
 
 ||| n + 1 < m implies n < m
 lteSuccLeft : LTE (S n) m -> LTE n m
