@@ -165,6 +165,31 @@ isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) with (isLTE (S n) m)
 sOrdLteRefl : SOrdLTE a a
 sOrdLteRefl = Right Refl
 
+||| Interface of types with multiple ordered sizes, with later sizes being
+||| allowed to grow if earlier sizes shrink at the same time.
+||| The ordsize is used for proofs of termination via accessibility.
+|||
+||| @ t the type whose elements can be mapped to SmallOrdinal
+interface MultiSized t where
+  multisize : t -> SmallOrdinal
+
+SOrdSmaller : MultiSized t => t -> t -> Type
+SOrdSmaller a b = multisize a `SOrdLT` multisize b
+
+SOrdSizeAccessible : MultiSized t => t -> Type
+SOrdSizeAccessible = Accessible SOrdSmaller
+
+{-
+||| Proof of well-foundedness of `Smaller`.
+||| Constructs accessibility for any given element of `a`, provided `Sized a`.
+sizeAccessible : Sized a => (x : a) -> SizeAccessible x
+sizeAccessible x = Access (acc $ size x)
+  where
+    acc : (sizeX : Nat) -> (y : a) -> (size y `LT` sizeX) -> SizeAccessible y
+    acc (S x') y (LTESucc yLEx')
+        = Access (\z, zLTy => acc x' z (lteTransitive zLTy yLEx'))
+        -}
+
 {-
 ||| a < b implies a < b + 1
 lteSuccRight : LTE n m -> LTE n (S m)
