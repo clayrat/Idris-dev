@@ -90,7 +90,7 @@ SOrdLTE left right = Either (SOrdLT left right) (left = right)
 total SOrdGTE : SmallOrdinal -> SmallOrdinal -> Type
 SOrdGTE left right = SOrdLTE right left
 
-||| Nothing is ever smaller than zero
+||| Nothing is ever smaller than ordinal zero
 consNotSOrdLTzero : Not ((MkSmallOrd _ _)`SOrdLT` (MkSmallOrd _ []))
 consNotSOrdLTzero lt = uninhabited lt
 
@@ -99,6 +99,10 @@ consNotSOrdLTEzero : Not ((MkSmallOrd _ (_::_) )`SOrdLTE` (MkSmallOrd _ []))
 consNotSOrdLTEzero (Left lt) = uninhabited lt
 consNotSOrdLTEzero (Right Refl) impossible
 
+||| Get the order of degrees from the order of ordinals
+|||
+||| Note that this yields an LTE, not an LT, due to not being able to exclude
+||| the SOrdCoefs constructor
 elimSOrdLTDegree : (MkSmallOrd n xs `SOrdLT` MkSmallOrd m ys) -> (n `LTE` m)
 elimSOrdLTDegree (SOrdLTDegree (LTESucc x)) = lteSuccRight x
 elimSOrdLTDegree {n = n} {m = n} (SOrdLTCoefs _) = lteRefl
@@ -115,6 +119,22 @@ elimSOrdLTDegree {n = n} {m = n} (SOrdLTCoefs _) = lteRefl
                                         {{ coefs 510 } = ([__])}
                                         {{ proper 511 } = ([__])}))
             -}
+
+
+--- Move this to Prelude.Nat eventually
+Uninhabited (LTE (S n) n) where
+  uninhabited (LTESucc lte) = uninhabited lte
+
+--- Move this to Prelude.Nat eventually
+||| `LTE` is antisymmetric
+lteAntiSym : LTE n m -> LTE m n -> n = m
+lteAntiSym LTEZero LTEZero = Refl
+lteAntiSym (LTESucc x) (LTESucc y) = cong $ lteAntiSym x y
+
+||| Get the lex order of the underlying vector from the order of ordinal
+elimSOrdLTCoefs : (MkSmallOrd n xs `SOrdLT` MkSmallOrd n ys) -> (xs `VLT` ys)
+elimSOrdLTCoefs (SOrdLTCoefs vlt) = vlt
+elimSOrdLTCoefs (SOrdLTDegree lt) = void $ uninhabited lt
 
 {-
 
