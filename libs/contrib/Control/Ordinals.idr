@@ -56,28 +56,27 @@ Ord SmallOrdinal where
 ||| @ ys the larger small ordinal
 data VLT  : (xs, ys : Vect n Nat) -> Type where
   ||| If degrees are equal, but leading coefficients aren't, those determine order.
-  VLTHead   : {auto headlt:LT x y} -> VLT (x::_) (y::_)
+  VLTHead   : (headlt:LT x y) -> VLT (x::_) (y::_)
   ||| If both degree and head agree, tails recursively define order.
-  VLTTail   : {auto taillt:VLT xs ys} -> VLT (h::xs) (h::ys)
+  VLTTail   : (taillt:VLT xs ys) -> VLT (h::xs) (h::ys)
 
 ||| Small Ordinal LT: Proofs that `a` is less than `b`
 ||| @ a the smaller small ordinal
 ||| @ b the larger small ordinal
 data SOrdLT  : (a, b : SmallOrdinal) -> Type where
   ||| If the `degree xs` is smaller than `degree ys`, `xs` is smaller than `ys`
-  SOrdLTDegree : {auto deglt: LT n m} -> SOrdLT (MkSmallOrd n _) (MkSmallOrd m _) 
+  SOrdLTDegree : (deglt: LT n m) -> SOrdLT (MkSmallOrd n _) (MkSmallOrd m _) 
   ||| If degrees are equal, the coefficients determine order.
-  SOrdLTCoefs  : {auto coefslt:VLT xs ys} -> SOrdLT (MkSmallOrd n xs) (MkSmallOrd n ys)
+  SOrdLTCoefs  : (coefslt:VLT xs ys) -> SOrdLT (MkSmallOrd n xs) (MkSmallOrd n ys)
 
 ||| Nil is not smaller than itself
 Uninhabited (VLT _ []) where
-  uninhabited VLTHead impossible
-  uninhabited VLTTail impossible
+  uninhabited lt impossible
 
 ||| Nothing is smaller than zero
 Uninhabited (SOrdLT _ (MkSmallOrd _ [])) where
-  uninhabited (SOrdLTDegree {deglt}) = uninhabited deglt
-  uninhabited (SOrdLTCoefs {coefslt}) = uninhabited coefslt
+  uninhabited (SOrdLTDegree deglt) = uninhabited deglt
+  uninhabited (SOrdLTCoefs coefslt) = uninhabited coefslt
 
 ||| Strict greater than
 total SOrdGT : SmallOrdinal -> SmallOrdinal -> Type
@@ -101,8 +100,8 @@ consNotSOrdLTEzero (Left lt) = uninhabited lt
 consNotSOrdLTEzero (Right Refl) impossible
 
 elimSOrdLTDegree : (MkSmallOrd n xs `SOrdLT` MkSmallOrd m ys) -> (n `LTE` m)
-elimSOrdLTDegree (SOrdLTDegree {deglt = (LTESucc x)}) = lteSuccRight x
-elimSOrdLTDegree {n = n} {m = n} SOrdLTCoefs = lteRefl
+elimSOrdLTDegree (SOrdLTDegree (LTESucc x)) = lteSuccRight x
+elimSOrdLTDegree {n = n} {m = n} (SOrdLTCoefs _) = lteRefl
 
 -- "obvious" proof search produced this on elimSOrdLTDegree (SOrdLTCoefs {coefslt}). 
 -- No, it doesn't check. Report at some later date.
