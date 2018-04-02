@@ -20,14 +20,14 @@ data NoLeadZ : (v:Vect n Nat) -> Type where
 ||| as a sum of powers of omega with natural coefficients.
 ||| They are well-ordered, and so well-founded, with degree-lexicographical order.
 record SmallOrdinal where
-  constructor MkSmallOrdinal
+  constructor MkSmallOrd
   degree : Nat
   coefs : Vect degree Nat
   {proper : NoLeadZ coefs}
 
 ||| Wraps a properly formed `Vect _ Nat` of coefficients of powers of omega as a small ordinal.
 smallOrdinal : (coefs:Vect _ Nat) -> {auto proper : NoLeadZ coefs} -> SmallOrdinal
-smallOrdinal coefs {proper} = MkSmallOrdinal _ coefs {proper}
+smallOrdinal coefs {proper} = MkSmallOrd _ coefs {proper}
 
 ||| Casts a Vect _ Nat to a small ordinal, stripping any leading zeroes.
 toSmallOrdinal : (coefs:Vect deg Nat) -> SmallOrdinal
@@ -43,12 +43,12 @@ degreeIsLength {deg=(degree oo)} {v=(coefs oo)} oo Refl = Refl
 
 Eq SmallOrdinal where
   (==) x y with (decEq (degree x) (degree y)) 
-    (==) x (MkSmallOrdinal (degree x) v) | Yes Refl = coefs x == v
+    (==) x (MkSmallOrd (degree x) v) | Yes Refl = coefs x == v
     | No _ = False
 
 Ord SmallOrdinal where
   compare x y with (decEq (degree x) (degree y)) 
-    compare x (MkSmallOrdinal (degree x) v) | Yes Refl = compare (coefs x) v
+    compare x (MkSmallOrd (degree x) v) | Yes Refl = compare (coefs x) v
     | No _ = compare (degree x) (degree y) 
 
 ||| Vector LT: Proofs that `xs` is lexicographically less than `ys`
@@ -65,16 +65,17 @@ data VLT  : (xs, ys : Vect n Nat) -> Type where
 ||| @ b the larger small ordinal
 data SOrdLT  : (a, b : SmallOrdinal) -> Type where
   ||| If the `degree xs` is smaller than `degree ys`, `xs` is smaller than `ys`
-  SOrdLTDegree : {auto deglt: LT n m} -> SOrdLT (MkSmallOrdinal n _) (MkSmallOrdinal m _) 
+  SOrdLTDegree : {auto deglt: LT n m} -> SOrdLT (MkSmallOrd n _) (MkSmallOrd m _) 
   ||| If degrees are equal, the coefficients determine order.
-  SOrdLTCoefs  : {auto coefslt:VLT xs ys} -> SOrdLT (MkSmallOrdinal n xs) (MkSmallOrdinal n ys)
+  SOrdLTCoefs  : {auto coefslt:VLT xs ys} -> SOrdLT (MkSmallOrd n xs) (MkSmallOrd n ys)
 
 ||| Nil is not smaller than itself
 Uninhabited (VLT _ []) where
   uninhabited VLTHead impossible
   uninhabited VLTTail impossible
 
-Uninhabited (SOrdLT _ (MkSmallOrdinal _ [])) where
+||| Nothing is smaller than zero
+Uninhabited (SOrdLT _ (MkSmallOrd _ [])) where
   uninhabited (SOrdLTDegree {deglt}) = uninhabited deglt
   uninhabited (SOrdLTCoefs {coefslt}) = uninhabited coefslt
 
@@ -90,12 +91,19 @@ SOrdLTE left right = Either (SOrdLT left right) (left = right)
 total SOrdGTE : SmallOrdinal -> SmallOrdinal -> Type
 SOrdGTE left right = SOrdLTE right left
 
+||| Nothing is ever smaller than zero
+consNotSOrdLTzero : Not ((MkSmallOrd _ _)`SOrdLT` (MkSmallOrd _ []))
+consNotSOrdLTzero lt = uninhabited lt
+
+||| A constructor is never less than or equal to zero.
+consNotSOrdLTEzero : Not ((MkSmallOrd _ (_::_) )`SOrdLTE` (MkSmallOrd _ []))
+consNotSOrdLTEzero (Left lt) = uninhabited lt
+consNotSOrdLTEzero (Right Refl) impossible
 {-
 
-||| A successor is never less than or equal zero
-succNotLTEzero : Not (S m `LTE` Z)
-succNotLTEzero LTEZero impossible
-
+  SOrdLTDegree : {auto deglt: LT n m} -> SOrdLT (MkSmallOrd n _) (MkSmallOrd m _) 
+  ||| If degrees are equal, the coefficients determine order.
+  SOrdLTCoefs  : {auto coefslt:VLT xs ys} -> SOrdLT (MkSmallOrd n xs) (MkSmallOrd n ys)
 ||| If two numbers are ordered, their predecessors are too
 fromLteSucc : (S m `LTE` S n) -> (m `LTE` n)
 fromLteSucc (LTESucc x) = x
