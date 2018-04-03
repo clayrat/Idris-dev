@@ -78,7 +78,7 @@ Uninhabited (SOrdLT _ (MkSmallOrd _ [])) where
   uninhabited (SOrdLTCoefs coefslt) = uninhabited coefslt
 
 ||| Nothing is smaller than zero
-noSOrdLTzero : Not (SOrdLT _ (MkSmallOrd _ [])) 
+noSOrdLTzero : Not (SOrdLT any (MkSmallOrd _ [] {proper=NoLeadZNil}) )
 noSOrdLTzero = uninhabited
 
 ||| Strict greater than
@@ -173,17 +173,53 @@ sOrdLteRefl = Right Refl
 interface MultiSized t where
   multisize : t -> SmallOrdinal
 
+MultiSized SmallOrdinal where
+  multisize = id
+
+
 SOrdSmaller : MultiSized t => t -> t -> Type
 SOrdSmaller a b = multisize a `SOrdLT` multisize b
 
-SOrdSizeAccessible : MultiSized t => t -> Type
-SOrdSizeAccessible = Accessible SOrdSmaller
+MultiSizeAccessible : MultiSized t => t -> Type
+MultiSizeAccessible = Accessible SOrdSmaller
+
+
+||| Proof of well-foundedness of `SOrdSmaller`.
+||| Constructs accessibility for any given element of `t`, provided `MultiSized t`.
+multiSizeAccessible : MultiSized t => (x : t) -> MultiSizeAccessible x
+multiSizeAccessible {t} x with (multisize x) proof sizeX 
+  | (MkSmallOrd Z [] {proper = NoLeadZNil}) = Access (\y,yLTx=> -- Induction base: x=0 => y<x empty
+                               void $ noSOrdLTzero (rewrite sizeX in yLTx))
+  | (MkSmallOrd (S msAdxt) (msAxh :: msAxt) {proper = msAproper}) 
+    = Access (rewrite sym sizeX in acc msAdxt msAxh msAxt msAproper) where
+      -- We need unpacked arguments for acc because size change under a function doesn't count
+      acc : (dxt:Nat) -> (xh:Nat) -> (xt:Vect dxt Nat) -> (propX:NoLeadZ (xh::xt)) -> 
+            (y : t) -> (solt:multisize y `SOrdLT` MkSmallOrd (S dxt) (xh::xt) {proper=propX}) -> MultiSizeAccessible y
+      acc dxt xh xt propX y solt with (multisize y) proof sizeY
+        acc _ _ _ _ _ _ | (MkSmallOrd Z [] {proper=NoLeadZNil}) =  
+          Access (\z,zLTy=>void $ noSOrdLTzero (rewrite sizeY in zLTy)) -- y=0 => Accessible y
+        acc Z _ _ _ _ (SOrdLTDegree (LTESucc LTEZero)) | (MkSmallOrd (S _) _) impossible -- x=1 => y=0
+        acc (S dxt') xh (xth :: xtt) propX y (SOrdLTDegree (LTESucc (LTESucc mLTEk))) 
+          | (MkSmallOrd (S dyt') (yh::yt)) = Access (\z, zLTy => acc dxt' (S yh) xtt _ z ?hole_1)
+        acc dyt' (S xh') xt propX y (SOrdLTCoefs (VLTHead (LTESucc lts))) 
+          | (MkSmallOrd (S dyt') (yh::yt)) = Access (\z, zLTy => acc dyt' xh' xt _ z ?hole3)
+        acc dyt' yh xcs propX y (SOrdLTCoefs (VLTTail taillt)) 
+          | (MkSmallOrd (S dyt') (yh::ycs)) = Access (\z, zLTy => ?hole)
+
+  {-
+  acc sizeX y solt with (multisize y) proof sizeY
+    acc (MkSmallOrd _ _) _ _ | (MkSmallOrd Z [] {proper=NoLeadZNil}) = 
+      Access (\z,zLTy=>void $ noSOrdLTzero (rewrite sizeY in zLTy))
+    acc (MkSmallOrd (S Z) _) _ (SOrdLTDegree (LTESucc LTEZero)) | (MkSmallOrd (S _) _) impossible
+    acc (MkSmallOrd (S (S k))  (h :: th :: xs)) y (SOrdLTDegree (LTESucc (LTESucc lts))) 
+            | (MkSmallOrd (S len) (yh :: ys)) = 
+              Access (?temphole) --(\z,zLTy=>acc ?ordhole z ?relhole) --(MkSmallOrd ( k) (xs)) z ?acchole)
+    acc (MkSmallOrd n ys) y (SOrdLTCoefs coefslt) | (MkSmallOrd n xs) 
+        = Access (?hole_2)
+        -}
 
 {-
-||| Proof of well-foundedness of `Smaller`.
-||| Constructs accessibility for any given element of `a`, provided `Sized a`.
-sizeAccessible : Sized a => (x : a) -> SizeAccessible x
-sizeAccessible x = Access (acc $ size x)
+multiSizeAccessible x = Access (acc $ size x)
   where
     acc : (sizeX : Nat) -> (y : a) -> (size y `LT` sizeX) -> SizeAccessible y
     acc (S x') y (LTESucc yLEx')
