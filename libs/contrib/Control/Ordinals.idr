@@ -197,7 +197,95 @@ lteNeqIsLt {n = Z} {m = Z} neq LTEZero = void $ neq Refl
 lteNeqIsLt {n = Z} {m = (S k)} neq LTEZero = LTESucc LTEZero
 lteNeqIsLt {n = (S n')} {m = (S m')} neq (LTESucc n'LTEm') = LTESucc $ lteNeqIsLt (neq . cong) n'LTEm'
 
+succPreservesAccess : (acch:Accessible VLT (h::t)) -> Accessible VLT (S h::t)
+succPreservesAccess {h = Z} (Access rec) = Access $ \(ah::at),aLTx=>case aLTx of
+                                                                  (VLTHead (LTESucc x)) => ?hole496372
+                                                                  (VLTTail taillt) => ?hole_4
+succPreservesAccess {h = (S k)} (Access rec) = ?succPreservesAccess_rhs_3
 
+namespace wellOrdVectN
+  istep : (ih1:(it:Vect n Nat) -> Accessible VLT it) -> 
+          (ih2:{it:Vect n Nat} -> {ihh:Nat} -> (r:Accessible VLT (ihh::it)) -> Accessible VLT (S ihh::it)) ->
+           (xh:Nat) -> (xt:Vect n Nat) -> Accessible VLT (xh::xt)
+  istep ih1 ih2 Z xt = ?hole567891
+  istep ih1 ih2 (S xh') xt = ih2 (istep ih1 ih2 xh' xt)
+
+
+  step : (n:Nat) -> (xh:Nat) -> (xt:Vect n Nat) -> (ih:(t:Vect n Nat) -> Accessible VLT t) -> Accessible VLT (xh::xt)
+  step n _xh _xt ih = Access $ acc _xh _xt where
+    acc : (h:Nat) -> (t:Vect n Nat) -> (y:Vect (S n) Nat) -> y `VLT` (h::t) -> Accessible VLT y
+    acc (S h') t (yh :: yt) (VLTHead (LTESucc yhLEh')) with (decEq yh h')
+      acc (S h') t (h' :: yt) (VLTHead (LTESucc yhLEh')) | (Yes Refl) = Access $ zacc h' yhLEh' where 
+        zacc h yhLEh (zh::zt) (VLTHead zhLTyh) = acc h t (zh::zt) $ VLTHead $ lteTransitive zhLTyh yhLEh
+        zacc h yhLEh (h::zt) (VLTTail ztLTyt) = ?hole -- acc h yt (h::zt) $ VLTTail ztLTyt
+      acc (S h') t (yh :: yt) (VLTHead (LTESucc yhLEh')) | (No neq) = Access $ \(zh::zt),zLTy=> 
+                       case zLTy of
+                            (VLTHead zhLTyh) => acc h' t (zh::zt) $ VLTHead $ lteTransitive zhLTyh yhLEh'
+                            (VLTTail ztLTyt) => acc h' t (zh::zt) $ VLTHead $ lteNeqIsLt neq yhLEh' -- lteTransitive zhLTyh yhLEh'
+    acc _h xt (_h :: yt) (VLTTail ytLTxt) = Access $ \z,zLTy=>tacc _h xt yt z ytLTxt zLTy where
+      tacc : (h:Nat) -> (x:Vect m Nat) -> (y:Vect m Nat) -> (z:Vect (S m) Nat) -> 
+             (yLTx:y `VLT` x) -> (zLThy:z `VLT` h::y) -> Accessible VLT z
+      tacc h x y (zh :: zt) yLTx (VLTHead headlt) = ?tacc_rhs_1
+      tacc h x y (h  :: zt) yLTx (VLTTail taillt) = ?tacc_rhs_2
+
+
+    --Access $ zacc n h t yt ytLTt where
+      {-
+      zacc (S n') (S h') (th :: t') (yth :: yt') (VLTHead ythLTth) (zh :: zt) (VLTHead (LTESucc zhLEh')) with (decEq zh h') 
+        zacc (S n') (S h') (th :: t') (yth :: yt') (VLTHead ythLTth) (h' :: zt) (VLTHead (LTESucc zhLEh')) | (Yes Refl) 
+          = acc (S h') xt
+        zacc (S n') (S h') (th :: t') (yth :: yt') (VLTHead ythLTth) (zh :: zt) (VLTHead (LTESucc zhLEh')) | (No contra) = ?hole_5
+      zacc (S n') h (th :: t') (yth :: yt') (VLTHead headlt) (h  :: zt) (VLTTail taillt) = ?hole_6
+      zacc (S n') h (th :: t') (th  :: yt') (VLTTail taillt) (zh :: zt) (VLTHead headlt) = ?hole_2
+      zacc (S n') h (th :: t') (th  :: yt') (VLTTail taillt) (h  :: zt) (VLTTail x) = ?hole_7
+      -}
+
+
+
+--  step (S n') (S k) (x :: xs) ih = ?hole75236234_1 --Access $ \(yh::yt),(VLTTail ytLTxt)=> step ih (ih yt)
+           
+{-
+  step Z Z [] ih = Access $ \z,zLTx=> case zLTx of (VLTHead headlt) => absurd headlt
+                                                   (VLTTail taillt) => absurd taillt
+  step Z (S xh') [] ih = Access $ acc (S xh') where 
+    acc : (xh:Nat) -> (y:Vect 1 Nat) -> y `VLT` [xh] -> Accessible VLT y
+    acc Z _ (VLTHead _) impossible
+    acc (S x') [y] (VLTHead (LTESucc yLEx')) = Access $ \[z], zLTy => case zLTy of 
+                                    (VLTHead zLTy) => acc x' [z] (VLTHead (lteTransitive zLTy yLEx'))
+                                    (VLTTail taillt) => absurd taillt 
+                                    -}
+{-
+      acc (S h') t (Access rec) (h' :: yt) (VLTHead (LTESucc yhLTEh')) | (Yes Refl) = 
+        Access $ \z,zLTy=> ?hole725 --acc h' yt (Access rec) z ?hole_4
+(y\[zh],zLTx=> case zLTx of
+                                               (VLTHead headlt) => case (decEq zh xh') of
+                                                                        (Yes Refl) => step Z xh' [] ih
+                                                                        (No contra) => ?hole_4
+                                               (VLTTail taillt) => absurd taillt
+                                                                   -- Access $ \z,zLTx=> case zLTx of (VLTHead headlt) => absurd headlt
+                                         --                              (VLTTail taillt) => absurd taillt
+                                         -}
+-- \(yh::yt),(VLTTail ytLTxt)=> ?hole --step {n=k} $ ?hole --ih -- xt yt ytLTxt
+  {-
+  P = (n:Nat) -> (t:Vect n Nat) -> Accessible VLT t
+accInd : {LT : Nat -> Nat -> Type} -> {P : a -> Type} ->
+         (step : (x : Nat) -> ((y : Nat) -> rel y x -> P y) -> P x) ->
+         (z : Nat) -> Accessible LT z -> P z
+         -}
+
+consPreservesAccess : {h:Nat} -> (accx:Accessible VLT t) -> Accessible VLT (h::t)
+consPreservesAccess {h = Z} (Access rec) = Access $ \(yh::yt),(VLTTail ytLTx)=> consPreservesAccess $ rec yt ytLTx
+consPreservesAccess {h = (S k)} {t=_t} accx = Access $ acc (S k) _t accx where
+    acc : (h:Nat) -> (t:Vect m Nat) -> (acct:Accessible VLT t) ->
+          (y:Vect (S m) Nat) -> (y `VLT` h::t) -> Accessible VLT y
+    acc h t (Access rec) (h :: yt) (VLTTail ytLTt) = consPreservesAccess $ rec yt ytLTt
+    acc (S h') t (Access rec) (yh :: yt) (VLTHead (LTESucc yhLTEh')) with (decEq yh h')
+      acc (S h') t (Access rec) (h' :: yt) (VLTHead (LTESucc yhLTEh')) | (Yes Refl) = 
+        Access $ \z,zLTy=> ?hole725 --acc h' yt (Access rec) z ?hole_4
+      acc (S h') t (Access rec) (yh :: yt) (VLTHead (LTESucc yhLTEh')) | (No contra) = ?hole_3
+                       --  \(yh::yt),yLTx=> case yLTx of
+          --    (VLTTail ytLTx) => consPreservesAccess $ rec yt ytLTt
+           --   (VLTHead yhLTh) => Access $ ?hole
 
 wellOrderVectN : (x : Vect len Nat) -> Accessible VLT x
 wellOrderVectN {len = Z} [] = Access (\y,yLTx => void $ uninhabited yLTx)
@@ -213,7 +301,7 @@ wellOrderVectN {len = (S _n)} (_xh :: _xt) = Access (acc _n _xh _xt) where
             \(zh::zt),zLTy=> case zLTy of
                            (VLTHead zhLTh) => ?ho_1
                            (VLTTail ztLTyt) => ?ho_2
-  acc (S n') h (h'::ys) (h::h'::xs) (VLTTail (VLTTail taillt)) = Access $ \z,zLTy=> ?hole
+  acc (S n') h (h'::ys) (h::h'::xs) (VLTTail (VLTTail taillt)) = Access $ \z,zLTy=> ?hole5
              
   {-
   acc n (S Z) xt (Z :: yt) (VLTHead (LTESucc xh'LTyh')) = Access $ \z,zLTy=>acc n Z yt z zLTy
