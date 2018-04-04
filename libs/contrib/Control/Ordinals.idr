@@ -252,6 +252,10 @@ inductVLTWellFounded : (n:Nat) -> (x:Vect n Nat) -> Accessible VLT x
 inductVLTWellFounded Z [] = Access $  \y,yLTNil=>absurd yLTNil
 inductVLTWellFounded (S k) (x :: xs) = consPreservesAccess (inductVLTWellFounded k xs) (inductVLTWellFounded k)
 
+WellFounded VLT where
+  wellFounded {n} x = inductVLTWellFounded n x
+
+
                       {-
 consPreservesAccess : {h:Nat} -> (accx:Accessible VLT t) -> Accessible VLT (h::t)
 consPreservesAccess {h = Z} (Access rec) = Access $ \(yh::yt),(VLTTail ytLTx)=> consPreservesAccess $ rec yt ytLTx
