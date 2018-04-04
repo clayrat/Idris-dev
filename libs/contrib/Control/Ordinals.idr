@@ -192,12 +192,10 @@ MultiSizeAccessible : MultiSized t => t -> Type
 MultiSizeAccessible = Accessible SOrdSmaller
 
 -- Eventually move this to Prelude.Nat
-lteNeqIsLt : (neq:Not (n = m)) -> (nLTEm:n `LTE` m) -> n `LT` m
+lteNeqIsLt : (neq:Not (n = m)) -> (nLEm:n `LTE` m) -> n `LT` m
 lteNeqIsLt {n = Z} {m = Z} neq LTEZero = void $ neq Refl
 lteNeqIsLt {n = Z} {m = (S k)} neq LTEZero = LTESucc LTEZero
 lteNeqIsLt {n = (S n')} {m = (S m')} neq (LTESucc n'LTEm') = LTESucc $ lteNeqIsLt (neq . cong) n'LTEm'
-
-
 
 
 istep : (ih1:(it:Vect n Nat) -> Accessible VLT it) -> 
@@ -217,14 +215,25 @@ remPrefixLt [] x z zLTx = zLTx
 remPrefixLt (h :: shared') x z (VLTHead headlt) = absurd headlt
 remPrefixLt (h :: shared') x z (VLTTail taillt) = remPrefixLt shared' x z taillt
 
+rec : {x:Vect n Nat} -> Accessible VLT x -> (y:Vect n Nat) -> y `VLT` x -> Accessible VLT y
+rec (Access rec) = rec
+
 consZPreservesAccess : (accx:Accessible VLT t) -> Accessible VLT (0::t)
 consZPreservesAccess (Access rec) = Access $ \(yh::yt),(VLTTail ytLTx)=> consZPreservesAccess $ rec yt ytLTx
 
-succPreservesAccess : (acch:Accessible VLT (h::t)) -> Accessible VLT (S h::t)
-succPreservesAccess {h = Z} (Access rec) = Access $ \(ah::at),aLTx=>case aLTx of
-                                                                  (VLTHead (LTESucc x)) => ?hole49637
-                                                                  (VLTTail taillt) => ?hole_4
-succPreservesAccess {h = (S k)} (Access rec) = ?succPreservesAccess_rhs_3
+succPreservesAccess : {xt:Vect n Nat} -> (acch:Accessible VLT (xh::xt)) -> 
+                      (ihyp: (it:Vect n Nat) -> Accessible VLT it) -> Accessible VLT (S xh::xt)
+succPreservesAccess {xh = Z} (Access rech) ihyp = Access $ \(yh::yt),yLTx=>case yLTx of
+                            (VLTHead (LTESucc yhLEZ)) => case yh of
+                                                          Z => consZPreservesAccess $ ihyp yt
+                                                          (S yh') => absurd yhLEZ
+                            (VLTTail taillt) => succPreservesAccess (rech (0::yt) (VLTTail taillt)) ihyp
+succPreservesAccess {xh = (S xh')} (Access rech) ihyp = Access $ \(yh::yt),yLTx => case yLTx of
+        (VLTHead (LTESucc yhLExh)) => case decEq yh (S xh') of
+                       (Yes eq) => rewrite eq in 
+                                    succPreservesAccess (rech (xh'::yt) (VLTHead $ LTESucc lteRefl)) ihyp
+                       (No neq) => rech (yh::yt) (VLTHead $ lteNeqIsLt neq yhLExh)
+        (VLTTail taillt) => succPreservesAccess (rech (S xh'::yt) (VLTTail taillt)) ihyp
 
 accUnderCat : (shared:Vect k Nat) -> (xh:Nat) -> (xt:Vect n Nat) -> 
               Accessible VLT (xh::xt) -> Accessible VLT (shared++xh::xt)
