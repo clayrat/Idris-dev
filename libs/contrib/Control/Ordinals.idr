@@ -231,10 +231,23 @@ inductVLTWellFounded (S k) (x :: xs) = consPreservesAccess (inductVLTWellFounded
 WellFounded VLT where
   wellFounded {n} x = inductVLTWellFounded n x
 
+interface NSized (n:Nat) t where
+  nsize : t -> Vect n Nat
+
+VLTSmaller : NSized n t => t -> t -> Type
+VLTSmaller {n} a b = nsize {n} a `VLT` nsize {n} b
+
+NSizeAccessible : NSized n t => t -> Type
+NSizeAccessible {n} = Accessible (VLTSmaller {n})
+
+nsizeAccessible : NSized n t => (x:t) -> NSizeAccessible {n} x
+nsizeAccessible {n} x with (wellFounded {rel=VLT} (nsize {n} x)) 
+  | (Access recX) = Access $ \y,yLTx=> nsizeAccessible {n} y | (recX (nsize {n} y) yLTx)
+
                             
 ||| Interface of types with multiple ordered sizes, with later sizes being
 ||| allowed to grow if earlier sizes shrink at the same time.
-||| The ordsize is used for proofs of termination via accessibility.
+||| The ordinal size is used for proofs of termination via accessibility.
 |||
 ||| @ t the type whose elements can be mapped to SmallOrdinal
 interface MultiSized t where
