@@ -197,18 +197,49 @@ lteNeqIsLt {n = Z} {m = Z} neq LTEZero = void $ neq Refl
 lteNeqIsLt {n = Z} {m = (S k)} neq LTEZero = LTESucc LTEZero
 lteNeqIsLt {n = (S n')} {m = (S m')} neq (LTESucc n'LTEm') = LTESucc $ lteNeqIsLt (neq . cong) n'LTEm'
 
+
+
+
+istep : (ih1:(it:Vect n Nat) -> Accessible VLT it) -> 
+        (ih2:{it:Vect n Nat} -> {ihh:Nat} -> (r:Accessible VLT (ihh::it)) -> Accessible VLT (S ihh::it)) ->
+         (xh:Nat) -> (xt:Vect n Nat) -> Accessible VLT (xh::xt)
+istep ih1 ih2 Z xt = ?hole567891
+istep ih1 ih2 (S xh') xt = ih2 (istep ih1 ih2 xh' xt)
+
+addPrefixLt : (shared:Vect k Nat) -> (x:Vect n Nat) -> (z:Vect n Nat) -> 
+             z `VLT` x -> shared++z `VLT` shared++x
+addPrefixLt [] x z zLTx = zLTx
+addPrefixLt (h :: shared') x z zLTx = VLTTail $ addPrefixLt shared' x z zLTx
+
+remPrefixLt : (shared:Vect k Nat) -> (x:Vect n Nat) -> (z:Vect n Nat) -> 
+             shared++z `VLT` shared++x -> z `VLT` x
+remPrefixLt [] x z zLTx = zLTx
+remPrefixLt (h :: shared') x z (VLTHead headlt) = absurd headlt
+remPrefixLt (h :: shared') x z (VLTTail taillt) = remPrefixLt shared' x z taillt
+
+consZPreservesAccess : (accx:Accessible VLT t) -> Accessible VLT (0::t)
+consZPreservesAccess (Access rec) = Access $ \(yh::yt),(VLTTail ytLTx)=> consZPreservesAccess $ rec yt ytLTx
+
 succPreservesAccess : (acch:Accessible VLT (h::t)) -> Accessible VLT (S h::t)
 succPreservesAccess {h = Z} (Access rec) = Access $ \(ah::at),aLTx=>case aLTx of
-                                                                  (VLTHead (LTESucc x)) => ?hole496372
+                                                                  (VLTHead (LTESucc x)) => ?hole49637
                                                                   (VLTTail taillt) => ?hole_4
 succPreservesAccess {h = (S k)} (Access rec) = ?succPreservesAccess_rhs_3
 
+accUnderCat : (shared:Vect k Nat) -> (xh:Nat) -> (xt:Vect n Nat) -> 
+              Accessible VLT (xh::xt) -> Accessible VLT (shared++xh::xt)
+accUnderCat [] xh xt accx = accx
+accUnderCat {n} (sh :: st) xh xt (Access rec) = Access $ acc sh st where
+  acc : (sh:Nat) -> (st:Vect k Nat) -> (z:Vect (S k+S n) Nat) -> (zLTsx:z `VLT` (sh::st) ++ (xh :: xt)) -> Accessible VLT z
+  acc Z [] (yh :: yt) (VLTHead headlt) = absurd headlt
+  acc Z [] (Z :: yt) (VLTTail taillt) = Access $ \(zh::zt),zLTy=>
+                case zLTy of 
+                     (VLTHead headlt) => absurd headlt
+                     (VLTTail taillt) => ?hole_5
+  acc (S k) [] y yLTsx = ?holeaccU_4
+  acc sh (s'h :: s') y zLTsx = ?holeaccU_2
+
 namespace wellOrdVectN
-  istep : (ih1:(it:Vect n Nat) -> Accessible VLT it) -> 
-          (ih2:{it:Vect n Nat} -> {ihh:Nat} -> (r:Accessible VLT (ihh::it)) -> Accessible VLT (S ihh::it)) ->
-           (xh:Nat) -> (xt:Vect n Nat) -> Accessible VLT (xh::xt)
-  istep ih1 ih2 Z xt = ?hole567891
-  istep ih1 ih2 (S xh') xt = ih2 (istep ih1 ih2 xh' xt)
 
 
   step : (n:Nat) -> (xh:Nat) -> (xt:Vect n Nat) -> (ih:(t:Vect n Nat) -> Accessible VLT t) -> Accessible VLT (xh::xt)
@@ -217,16 +248,24 @@ namespace wellOrdVectN
     acc (S h') t (yh :: yt) (VLTHead (LTESucc yhLEh')) with (decEq yh h')
       acc (S h') t (h' :: yt) (VLTHead (LTESucc yhLEh')) | (Yes Refl) = Access $ zacc h' yhLEh' where 
         zacc h yhLEh (zh::zt) (VLTHead zhLTyh) = acc h t (zh::zt) $ VLTHead $ lteTransitive zhLTyh yhLEh
-        zacc h yhLEh (h::zt) (VLTTail ztLTyt) = ?hole -- acc h yt (h::zt) $ VLTTail ztLTyt
+        zacc h yhLEh (h::zt) (VLTTail ztLTyt) = ?holezaccc2436 -- acc h yt (h::zt) $ VLTTail ztLTyt
       acc (S h') t (yh :: yt) (VLTHead (LTESucc yhLEh')) | (No neq) = Access $ \(zh::zt),zLTy=> 
                        case zLTy of
                             (VLTHead zhLTyh) => acc h' t (zh::zt) $ VLTHead $ lteTransitive zhLTyh yhLEh'
                             (VLTTail ztLTyt) => acc h' t (zh::zt) $ VLTHead $ lteNeqIsLt neq yhLEh' -- lteTransitive zhLTyh yhLEh'
-    acc _h xt (_h :: yt) (VLTTail ytLTxt) = Access $ \z,zLTy=>tacc _h xt yt z ytLTxt zLTy where
-      tacc : (h:Nat) -> (x:Vect m Nat) -> (y:Vect m Nat) -> (z:Vect (S m) Nat) -> 
-             (yLTx:y `VLT` x) -> (zLThy:z `VLT` h::y) -> Accessible VLT z
-      tacc h x y (zh :: zt) yLTx (VLTHead headlt) = ?tacc_rhs_1
-      tacc h x y (h  :: zt) yLTx (VLTTail taillt) = ?tacc_rhs_2
+    acc _h xt (_h :: yt) (VLTTail ytLTxt) = Access $ \_z,zLTy=>zacc _h xt yt _z zLTy ytLTxt where
+      tacc : (shared:Vect k Nat) -> (x:Vect m Nat) -> (y:Vect m Nat) -> (yLTx:y `VLT` x) -> 
+             (z:Vect m Nat) -> (zLTy:z `VLT` y) -> Accessible VLT (shared++z)
+      tacc {m=S m'} shared ((S xh') :: x') (yh :: y') (VLTHead (LTESucc yhLExh')) (zh :: z') (VLTHead zhLTyh)  
+        = ?holetacc426
+      tacc shared (h       :: x') (h  :: y') (VLTTail y'LTx')            (zh :: z') (VLTHead zhLTh )   = ?tacc_rhs_4
+      tacc shared (xh      :: x') (h  :: y') (VLTHead hLTxh )            (h  :: z') (VLTTail z'LTy')   = ?tacc_rhs_1
+      tacc shared (h       :: x') (h  :: y') (VLTTail y'LTx')            (h  :: z') (VLTTail z'LTy') 
+        = rewrite vectAppendAssociative shared [h] z' in (tacc (shared ++ [h]) x' y' y'LTx' z' z'LTy')
+      zacc : (h:Nat) -> (x:Vect m Nat) -> (y:Vect m Nat) -> (z:Vect (S m) Nat) -> 
+             (zLThy:z `VLT` h::y) -> (yLTx:y `VLT` x) -> Accessible VLT z
+      zacc h x y (w :: xs) (VLTHead headlt) yLTx = ?zacc_rhs_1
+      zacc h x y (h :: z) (VLTTail zLTy) yLTx = tacc [h] x y yLTx z zLTy
 
 
     --Access $ zacc n h t yt ytLTt where
