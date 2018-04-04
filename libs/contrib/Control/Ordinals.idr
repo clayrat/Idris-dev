@@ -174,23 +174,6 @@ vltTransitive {n=(S n')} {x=(xh::_)} {y=(h::_)} {z=(h::_)} (VLTTail taillt) (VLT
 vltTransitive {n=(S n')} {x=(h::x')} {y=(h::y')} {z=(h::z')} (VLTTail z'LTy') (VLTTail y'LTx') 
     = VLTTail $ vltTransitive z'LTy' y'LTx'
 
-||| Interface of types with multiple ordered sizes, with later sizes being
-||| allowed to grow if earlier sizes shrink at the same time.
-||| The ordsize is used for proofs of termination via accessibility.
-|||
-||| @ t the type whose elements can be mapped to SmallOrdinal
-interface MultiSized t where
-  multisize : t -> SmallOrdinal
-
-MultiSized SmallOrdinal where
-  multisize = id
-
-SOrdSmaller : MultiSized t => t -> t -> Type
-SOrdSmaller a b = multisize a `SOrdLT` multisize b
-
-MultiSizeAccessible : MultiSized t => t -> Type
-MultiSizeAccessible = Accessible SOrdSmaller
-
 -- Eventually move this to Prelude.Nat
 lteNeqIsLt : (neq:Not (n = m)) -> (nLEm:n `LTE` m) -> n `LT` m
 lteNeqIsLt {n = Z} {m = Z} neq LTEZero = void $ neq Refl
@@ -208,7 +191,7 @@ remPrefixLt [] x z zLTx = zLTx
 remPrefixLt (h :: shared') x z (VLTHead headlt) = absurd headlt
 remPrefixLt (h :: shared') x z (VLTTail taillt) = remPrefixLt shared' x z taillt
 
-accrec : {x:Vect n Nat} -> Accessible VLT x -> (y:Vect n Nat) -> y `VLT` x -> Accessible VLT y
+accrec : {x:a} -> Accessible rel x -> (y:a) -> rel y x -> Accessible rel y
 accrec (Access rec) = rec
 
 consZPreservesAccess : (accx:Accessible VLT t) -> Accessible VLT (0::t)
@@ -249,6 +232,20 @@ WellFounded VLT where
   wellFounded {n} x = inductVLTWellFounded n x
 
                             
+||| Interface of types with multiple ordered sizes, with later sizes being
+||| allowed to grow if earlier sizes shrink at the same time.
+||| The ordsize is used for proofs of termination via accessibility.
+|||
+||| @ t the type whose elements can be mapped to SmallOrdinal
+interface MultiSized t where
+  multisize : t -> SmallOrdinal
+
+SOrdSmaller : MultiSized t => t -> t -> Type
+SOrdSmaller a b = multisize a `SOrdLT` multisize b
+
+MultiSizeAccessible : MultiSized t => t -> Type
+MultiSizeAccessible = Accessible SOrdSmaller
+
 ||| Proof of well-foundedness of `SOrdSmaller`.
 ||| Constructs accessibility for any given element of `t`, provided `MultiSized t`.
 multiSizeAccessible : MultiSized t => (x : t) -> MultiSizeAccessible x
