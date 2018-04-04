@@ -165,6 +165,15 @@ isSOrdLT (MkSmallOrd n xs) (MkSmallOrd m ys) with (isLTE (S n) m)
 sOrdLteRefl : SOrdLTE a a
 sOrdLteRefl = Right Refl
 
+||| `VLT` is transitive
+vltTransitive : {x,y,z:Vect n Nat} -> (zLTy:z `VLT` y) -> (yLTx:y `VLT` x) -> z `VLT` x
+vltTransitive {n=(S n')} {x=(xh::_)} {y=(yh::_)} {z=(zh::_)} (VLTHead zhLTyh) (VLTHead yhLTxh) 
+    = VLTHead $ lteTransitive zhLTyh $ lteSuccLeft yhLTxh
+vltTransitive {n=(S n')} {x=(h::_)} {y=(h::_)} {z=(zh::_)} (VLTHead zhLTh) (VLTTail taillt) = VLTHead zhLTh
+vltTransitive {n=(S n')} {x=(xh::_)} {y=(h::_)} {z=(h::_)} (VLTTail taillt) (VLTHead hLTxh) = VLTHead hLTxh
+vltTransitive {n=(S n')} {x=(h::x')} {y=(h::y')} {z=(h::z')} (VLTTail z'LTy') (VLTTail y'LTx') 
+    = VLTTail $ vltTransitive z'LTy' y'LTx'
+
 ||| Interface of types with multiple ordered sizes, with later sizes being
 ||| allowed to grow if earlier sizes shrink at the same time.
 ||| The ordsize is used for proofs of termination via accessibility.
@@ -176,15 +185,52 @@ interface MultiSized t where
 MultiSized SmallOrdinal where
   multisize = id
 
-
 SOrdSmaller : MultiSized t => t -> t -> Type
 SOrdSmaller a b = multisize a `SOrdLT` multisize b
 
 MultiSizeAccessible : MultiSized t => t -> Type
 MultiSizeAccessible = Accessible SOrdSmaller
 
+-- Eventually move this to Prelude.Nat
+lteNeqIsLt : (neq:Not (n = m)) -> (nLTEm:n `LTE` m) -> n `LT` m
+lteNeqIsLt {n = Z} {m = Z} neq LTEZero = void $ neq Refl
+lteNeqIsLt {n = Z} {m = (S k)} neq LTEZero = LTESucc LTEZero
+lteNeqIsLt {n = (S n')} {m = (S m')} neq (LTESucc n'LTEm') = LTESucc $ lteNeqIsLt (neq . cong) n'LTEm'
 
 
+
+wellOrderVectN : (x : Vect len Nat) -> Accessible VLT x
+wellOrderVectN {len = Z} [] = Access (\y,yLTx => void $ uninhabited yLTx)
+wellOrderVectN {len = (S _n)} (_xh :: _xt) = Access (acc _n _xh _xt) where
+  acc : (n:Nat) -> (xh:Nat) -> (xt:Vect n Nat) -> 
+        (y:Vect (S n) Nat) -> (yLTx:y `VLT` (xh::xt)) -> Accessible VLT y
+  acc n (S xh') xt (yh :: yt) (VLTHead (LTESucc yhLTxh)) with (decEq xh' yh)
+    acc n (S h') xt (h' :: yt) (VLTHead (LTESucc yhLTxh)) | Yes Refl = Access $ \z,zLTy=>acc n h' yt z zLTy
+    acc n (S xh') xt (yh :: yt) (VLTHead (LTESucc yhLTxh)) | No neq 
+      = Access $ \z,zLTy=>acc n xh' yt z $ vltTransitive zLTy $ VLTHead $ lteNeqIsLt (neq . sym) yhLTxh
+  acc Z _ _ (_::_) (VLTTail _) impossible
+  acc (S n') h (xh::xt) (h::yh::ytt) (VLTTail (VLTHead yhLTxh)) = Access $ 
+            \(zh::zt),zLTy=> case zLTy of
+                           (VLTHead zhLTh) => ?ho_1
+                           (VLTTail ztLTyt) => ?ho_2
+  acc (S n') h (h'::ys) (h::h'::xs) (VLTTail (VLTTail taillt)) = Access $ \z,zLTy=> ?hole
+             
+  {-
+  acc n (S Z) xt (Z :: yt) (VLTHead (LTESucc xh'LTyh')) = Access $ \z,zLTy=>acc n Z yt z zLTy
+  acc n (S (S xh'')) xt (Z :: yt) (VLTHead (LTESucc LTEZero)) 
+    = Access $ \z,zLTy=>case z of
+                   (Z :: z')     => acc n (S xh'') xt (Z :: z') (VLTHead (LTESucc LTEZero))
+                   ((S j) :: xs) => case zLTy of (VLTHead headlt) => void $ uninhabited headlt
+  acc n (S (S right)) xt ((S left) :: yt) (VLTHead (LTESucc (LTESucc x))) = Access $ \z,zLTy=>acc n (S right) xt z ?hole_4
+  -}
+
+ {- 
+    = Access (\(zh::z'),zLTy=>case zLTy of 
+                            (VLTHead headlt) => acc n xh' xt (zh::z') 
+                                  (VLTHead $ lteTransitive headlt yhLTxh')
+                            (VLTTail taillt) => acc n xh' xt (yh::z') (vltTransitive zLTy ?hole) )
+                            -}
+                            
 ||| Proof of well-foundedness of `SOrdSmaller`.
 ||| Constructs accessibility for any given element of `t`, provided `MultiSized t`.
 multiSizeAccessible : MultiSized t => (x : t) -> MultiSizeAccessible x
