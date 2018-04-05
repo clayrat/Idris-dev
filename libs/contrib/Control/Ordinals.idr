@@ -299,54 +299,7 @@ multisizeAccessible : MultiSized t => (x : t) -> MultiSizeAccessible x
 multisizeAccessible x with (wellFounded {rel=SOrdLT} (multisize x)) 
   | (Access recX) = Access $ \y,yLTx=> multisizeAccessible y | (recX (multisize y) yLTx)
 
-{-
-multiSizeAccessible {t} x with (multisize x) proof msAsizeX 
-  | (MkSmallOrd Z [] {proper = NoLeadZNil}) = Access (\y,yLTx=> -- Induction base: x=0 => y<x empty
-                               void $ noSOrdLTzero (rewrite msAsizeX in yLTx))
-  | (MkSmallOrd (S msAdxt) (msAxh :: msAxt) {proper = msAproper}) 
-    = Access (rewrite sym msAsizeX in acc msAdxt msAxh msAxt msAproper) where
-      -- We need unpacked arguments for acc because size change under a function doesn't count
-      mutual
-        acc : (dxt:Nat) -> (xh:Nat) -> (xt:Vect dxt Nat) -> (propX:NoLeadZ (xh::xt)) -> 
-              (y : t) -> (solt:multisize y `SOrdLT` MkSmallOrd (S dxt) (xh::xt) {proper=propX}) -> MultiSizeAccessible y
-        acc dxt xh xt propX y solt with (multisize y) proof sizeY
-          acc _ _ _ _ _ _ | (MkSmallOrd Z [] {proper=NoLeadZNil}) =  
-            Access (\z,zLTy=>void $ noSOrdLTzero (rewrite sizeY in zLTy)) -- y=0 => Accessible y
-          acc Z _ _ _ _ (SOrdLTDegree (LTESucc LTEZero)) | (MkSmallOrd (S _) _) impossible -- x=1 => y=0
-          acc (S dxt') xh (xth :: xtt) propX y (SOrdLTDegree (LTESucc (LTESucc mLTEk))) 
-            | (MkSmallOrd (S dyt') (yh::yt)) = Access (\z, zLTy => acc dxt' (S yh) xtt _ z ?hole_1)
-          acc dt (S xh') xt propX y (SOrdLTCoefs (VLTHead (LTESucc lts))) 
-            | (MkSmallOrd (S dt) (yh::yt)) = Access (\z, zLTy => acc dt xh' xt _ z ?hole3)
-          acc dt h xt prop2 y (SOrdLTCoefs (VLTTail taillt)) 
-            | (MkSmallOrd (S dt) (h::yt)) = Access (\z, zLTy => tailacc y sizeY taillt zLTy)
-        tailacc : (y : t) -> (sizeY : MkSmallOrd (S dt') (yh :: yt) = multisize y) -> 
-                  (taillt : VLT yt xt) -> (zLTy : SOrdSmaller z y) -> Accessible SOrdSmaller z
-        tailacc y sY {yt = (yth :: yt')} {xt = ((S xth') :: xt')} ((VLTHead (LTESucc lt))) {z} zLTy = Access (\q, qLTz => ?tailacc_rhs_4)
-        tailacc y sY {yt = (th :: yt')} {xt = (th :: xt')} ((VLTTail taillt)) {z} zLTy = 
-          Access (\q, qLTz => ?tailacc_rhs_2)
-          -}
-
-  {-
-  acc sizeX y solt with (multisize y) proof sizeY
-    acc (MkSmallOrd _ _) _ _ | (MkSmallOrd Z [] {proper=NoLeadZNil}) = 
-      Access (\z,zLTy=>void $ noSOrdLTzero (rewrite sizeY in zLTy))
-    acc (MkSmallOrd (S Z) _) _ (SOrdLTDegree (LTESucc LTEZero)) | (MkSmallOrd (S _) _) impossible
-    acc (MkSmallOrd (S (S k))  (h :: th :: xs)) y (SOrdLTDegree (LTESucc (LTESucc lts))) 
-            | (MkSmallOrd (S len) (yh :: ys)) = 
-              Access (?temphole) --(\z,zLTy=>acc ?ordhole z ?relhole) --(MkSmallOrd ( k) (xs)) z ?acchole)
-    acc (MkSmallOrd n ys) y (SOrdLTCoefs coefslt) | (MkSmallOrd n xs) 
-        = Access (?hole_2)
-        -}
-
-{-
-multiSizeAccessible x = Access (acc $ size x)
-  where
-    acc : (sizeX : Nat) -> (y : a) -> (size y `LT` sizeX) -> SizeAccessible y
-    acc (S x') y (LTESucc yLEx')
-        = Access (\z, zLTy => acc x' z (lteTransitive zLTy yLEx'))
-        -}
-
-{-
+{- TODO: translate the rest of the LTE truths, where applicable
 ||| a < b implies a < b + 1
 lteSuccRight : LTE n m -> LTE n (S m)
 lteSuccRight LTEZero     = LTEZero
@@ -370,4 +323,5 @@ lteAddRight (S k) = LTESucc (lteAddRight k)
 notLTImpliesGTE : Not (LT a b) -> GTE a b
 notLTImpliesGTE {b = Z} _ = LTEZero
 notLTImpliesGTE {a = Z} {b = S k} notLt = absurd (notLt (LTESucc LTEZero))
-notLTImpliesGTE {a = S k} {b = S j} notLt = LTESucc (notLTImpliesGTE (notLt . LTESucc))-}  
+notLTImpliesGTE {a = S k} {b = S j} notLt = LTESucc (notLTImpliesGTE (notLt . LTESucc))
+-}  
