@@ -16,6 +16,7 @@ modules = CFFI
         , Control.Monad.Syntax
         , Control.Partial
         , Control.Pipeline
+        , Control.Ordinals
 
         , Control.ST
         , Control.ST.Exception
