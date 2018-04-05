@@ -276,15 +276,8 @@ sOrdWellFounded (MkSmallOrd (S n') (xhc :: xtc) {proper}) = Access $ acc n' xhc 
     acc xtd xh xt propX (MkSmallOrd (S xtd) (yh :: yt) {proper=propY}) (SOrdLTCoefs coefslt) 
         | (Access recx) = Access $ \z,zLTy=>acc xtd yh yt propY z zLTy | recx (yh::yt) coefslt
 
-{-
-  acc xtd xh xt propX (MkSmallOrd (S xtd) (yh :: yt) {proper=propY}) (SOrdLTCoefs coefslt) with (wellFounded {rel=VLT} (xh::xt))
-        acc : (dxt:Nat) -> (xh:Nat) -> (xt:Vect dxt Nat) -> (propX:NoLeadZ (xh::xt)) -> 
-              (y : t) -> (solt:multisize y `SOrdLT` MkSmallOrd (S dxt) (xh::xt) {proper=propX}) -> MultiSizeAccessible y
-        acc dxt xh xt propX y solt with (multisize y) proof sizeY
-          acc Z _ _ _ _ (SOrdLTDegree (LTESucc LTEZero)) | (MkSmallOrd (S _) _) impossible -- x=1 => y=0
-          acc (S dxt') xh (xth :: xtt) propX y (SOrdLTDegree (LTESucc (LTESucc mLTEk))) 
-            | (MkSmallOrd (S dyt') (yh::yt)) = Access (\z, zLTy => acc dxt' (S yh) xtt _ z ?hole_1)
-          -}
+WellFounded SOrdLT where
+  wellFounded = sOrdWellFounded
                             
 ||| Interface of types with multiple ordered sizes, with later sizes being
 ||| allowed to grow if earlier sizes shrink at the same time.
@@ -302,7 +295,11 @@ MultiSizeAccessible = Accessible SOrdSmaller
 
 ||| Proof of well-foundedness of `SOrdSmaller`.
 ||| Constructs accessibility for any given element of `t`, provided `MultiSized t`.
-multiSizeAccessible : MultiSized t => (x : t) -> MultiSizeAccessible x
+multisizeAccessible : MultiSized t => (x : t) -> MultiSizeAccessible x
+multisizeAccessible x with (wellFounded {rel=SOrdLT} (multisize x)) 
+  | (Access recX) = Access $ \y,yLTx=> multisizeAccessible y | (recX (multisize y) yLTx)
+
+{-
 multiSizeAccessible {t} x with (multisize x) proof msAsizeX 
   | (MkSmallOrd Z [] {proper = NoLeadZNil}) = Access (\y,yLTx=> -- Induction base: x=0 => y<x empty
                                void $ noSOrdLTzero (rewrite msAsizeX in yLTx))
@@ -327,6 +324,7 @@ multiSizeAccessible {t} x with (multisize x) proof msAsizeX
         tailacc y sY {yt = (yth :: yt')} {xt = ((S xth') :: xt')} ((VLTHead (LTESucc lt))) {z} zLTy = Access (\q, qLTz => ?tailacc_rhs_4)
         tailacc y sY {yt = (th :: yt')} {xt = (th :: xt')} ((VLTTail taillt)) {z} zLTy = 
           Access (\q, qLTz => ?tailacc_rhs_2)
+          -}
 
   {-
   acc sizeX y solt with (multisize y) proof sizeY
