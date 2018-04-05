@@ -174,6 +174,12 @@ vltTransitive {n=(S n')} {x=(xh::_)} {y=(h::_)} {z=(h::_)} (VLTTail taillt) (VLT
 vltTransitive {n=(S n')} {x=(h::x')} {y=(h::y')} {z=(h::z')} (VLTTail z'LTy') (VLTTail y'LTx') 
     = VLTTail $ vltTransitive z'LTy' y'LTx'
 
+sOrdLtTransitive : (zLTy:z `SOrdLT` y) -> (yLTx:y `SOrdLT` x) -> z `SOrdLT` x
+sOrdLtTransitive (SOrdLTDegree zdLTyd) (SOrdLTDegree ydLTxd) = SOrdLTDegree $ lteTransitive zdLTyd $ lteSuccLeft ydLTxd
+sOrdLtTransitive (SOrdLTDegree deglt) (SOrdLTCoefs coefslt) = SOrdLTDegree deglt
+sOrdLtTransitive (SOrdLTCoefs coefslt) (SOrdLTDegree deglt) = SOrdLTDegree deglt
+sOrdLtTransitive (SOrdLTCoefs zsLTys) (SOrdLTCoefs ysLTxs) = SOrdLTCoefs $ vltTransitive zsLTys ysLTxs
+
 -- Eventually move this to Prelude.Nat
 lteNeqIsLt : (neq:Not (n = m)) -> (nLEm:n `LTE` m) -> n `LT` m
 lteNeqIsLt {n = Z} {m = Z} neq LTEZero = void $ neq Refl
@@ -244,6 +250,39 @@ nsizeAccessible : NSized n t => (x:t) -> NSizeAccessible {n} x
 nsizeAccessible {n} x with (wellFounded {rel=VLT} (nsize {n} x)) 
   | (Access recX) = Access $ \y,yLTx=> nsizeAccessible {n} y | (recX (nsize {n} y) yLTx)
 
+vltHeadSuccRight : (xLTy:y `VLT` (xh::xt)) -> (y `VLT` (S xh::xt))
+vltHeadSuccRight (VLTHead headlt) = VLTHead (lteSuccRight headlt)
+vltHeadSuccRight (VLTTail taillt) = VLTHead lteRefl
+
+sOrdHeadSuccRight : (xLTy:y `SOrdLT` MkSmallOrd (S xd') (xh::xt)) -> 
+                    (y `SOrdLT` MkSmallOrd (S xd') (S xh::xt) {proper=NoLeadZCons _})
+sOrdHeadSuccRight (SOrdLTDegree deglt) = SOrdLTDegree deglt
+sOrdHeadSuccRight (SOrdLTCoefs coefslt) = SOrdLTCoefs (vltHeadSuccRight coefslt)
+
+sOrdWellFounded : (x:SmallOrdinal) -> Accessible SOrdLT x
+sOrdWellFounded (MkSmallOrd Z []) = Access $ \y,yLTx=> absurd yLTx
+sOrdWellFounded (MkSmallOrd (S n') (xhc :: xtc) {proper}) = Access $ acc n' xhc xtc proper where
+  acc : (xtd:Nat) -> (xh:Nat) -> (xt:Vect xtd Nat) -> (propX:NoLeadZ (xh::xt)) ->
+        (y:SmallOrdinal) -> (yLTx:y `SOrdLT` (MkSmallOrd (S xtd) (xh :: xt) {proper=propX})) -> Accessible SOrdLT y
+  acc _ _ _ _ (MkSmallOrd Z []) _ = Access $ \z,zLTy=> absurd zLTy
+  acc Z _ _ _ (MkSmallOrd (S _) _) (SOrdLTDegree (LTESucc LTEZero)) impossible
+  acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S yd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd'))) with (decEq yd' xtd')
+    acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S xtd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd')))  
+      | (Yes Refl) = Access $ \z,zLTy=>acc xtd' (S yh) yt (NoLeadZCons ItIsSucc) z (sOrdHeadSuccRight zLTy)
+    acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S yd') (yh :: yt)) 
+      (SOrdLTDegree (LTESucc (LTESucc yd'LExtd')))  
+      | (No neq) = Access $ \z,zLTy=>acc xtd' (S xh) xt' (NoLeadZCons ItIsSucc) z $
+            sOrdLtTransitive zLTy $ SOrdLTDegree $ LTESucc $ lteNeqIsLt neq yd'LExtd'
+  acc xtd xh xt propX (MkSmallOrd (S xtd) ys) (SOrdLTCoefs coefslt) = ?acc_rhs_2
+
+{-
+        acc : (dxt:Nat) -> (xh:Nat) -> (xt:Vect dxt Nat) -> (propX:NoLeadZ (xh::xt)) -> 
+              (y : t) -> (solt:multisize y `SOrdLT` MkSmallOrd (S dxt) (xh::xt) {proper=propX}) -> MultiSizeAccessible y
+        acc dxt xh xt propX y solt with (multisize y) proof sizeY
+          acc Z _ _ _ _ (SOrdLTDegree (LTESucc LTEZero)) | (MkSmallOrd (S _) _) impossible -- x=1 => y=0
+          acc (S dxt') xh (xth :: xtt) propX y (SOrdLTDegree (LTESucc (LTESucc mLTEk))) 
+            | (MkSmallOrd (S dyt') (yh::yt)) = Access (\z, zLTy => acc dxt' (S yh) xtt _ z ?hole_1)
+          -}
                             
 ||| Interface of types with multiple ordered sizes, with later sizes being
 ||| allowed to grow if earlier sizes shrink at the same time.
