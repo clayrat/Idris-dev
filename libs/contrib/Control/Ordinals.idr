@@ -264,18 +264,20 @@ sOrdWellFounded (MkSmallOrd Z []) = Access $ \y,yLTx=> absurd yLTx
 sOrdWellFounded (MkSmallOrd (S n') (xhc :: xtc) {proper}) = Access $ acc n' xhc xtc proper where
   acc : (xtd:Nat) -> (xh:Nat) -> (xt:Vect xtd Nat) -> (propX:NoLeadZ (xh::xt)) ->
         (y:SmallOrdinal) -> (yLTx:y `SOrdLT` (MkSmallOrd (S xtd) (xh :: xt) {proper=propX})) -> Accessible SOrdLT y
-  acc _ _ _ _ (MkSmallOrd Z []) _ = Access $ \z,zLTy=> absurd zLTy
-  acc Z _ _ _ (MkSmallOrd (S _) _) (SOrdLTDegree (LTESucc LTEZero)) impossible
-  acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S yd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd'))) with (decEq yd' xtd')
-    acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S xtd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd')))  
-      | (Yes Refl) = Access $ \z,zLTy=>acc xtd' (S yh) yt (NoLeadZCons ItIsSucc) z (sOrdHeadSuccRight zLTy)
-    acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S yd') (yh :: yt)) 
-      (SOrdLTDegree (LTESucc (LTESucc yd'LExtd')))  
-      | (No neq) = Access $ \z,zLTy=>acc xtd' (S xh) xt' (NoLeadZCons ItIsSucc) z $
-            sOrdLtTransitive zLTy $ SOrdLTDegree $ LTESucc $ lteNeqIsLt neq yd'LExtd'
-  acc xtd xh xt propX (MkSmallOrd (S xtd) ys) (SOrdLTCoefs coefslt) = ?acc_rhs_2
+  acc xtd xh xt propX y yLTx with (wellFounded {rel=VLT} (xh::xt))
+    acc _ _ _ _ (MkSmallOrd Z []) _ | _ = Access $ \z,zLTy=> absurd zLTy
+    acc Z _ _ _ (MkSmallOrd (S _) _) (SOrdLTDegree (LTESucc LTEZero)) | _ impossible 
+    acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S yd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd'))) | _ with (decEq yd' xtd')
+      acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S xtd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd'))) | _
+        | (Yes Refl) = Access $ \z,zLTy=>acc xtd' (S yh) yt (NoLeadZCons ItIsSucc) z (sOrdHeadSuccRight zLTy)
+      acc (S xtd') xh (xth :: xt') propX (MkSmallOrd (S yd') (yh :: yt)) (SOrdLTDegree (LTESucc (LTESucc yd'LExtd')))  | _
+        | (No neq) = Access $ \z,zLTy=>acc xtd' (S xh) xt' (NoLeadZCons ItIsSucc) z $
+              sOrdLtTransitive zLTy $ SOrdLTDegree $ LTESucc $ lteNeqIsLt neq yd'LExtd'
+    acc xtd xh xt propX (MkSmallOrd (S xtd) (yh :: yt) {proper=propY}) (SOrdLTCoefs coefslt) 
+        | (Access recx) = Access $ \z,zLTy=>acc xtd yh yt propY z zLTy | recx (yh::yt) coefslt
 
 {-
+  acc xtd xh xt propX (MkSmallOrd (S xtd) (yh :: yt) {proper=propY}) (SOrdLTCoefs coefslt) with (wellFounded {rel=VLT} (xh::xt))
         acc : (dxt:Nat) -> (xh:Nat) -> (xt:Vect dxt Nat) -> (propX:NoLeadZ (xh::xt)) -> 
               (y : t) -> (solt:multisize y `SOrdLT` MkSmallOrd (S dxt) (xh::xt) {proper=propX}) -> MultiSizeAccessible y
         acc dxt xh xt propX y solt with (multisize y) proof sizeY
