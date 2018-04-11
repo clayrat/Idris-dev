@@ -11,12 +11,12 @@ modules = CFFI
         , Control.Algebra.NumericImplementations
         , Control.Algebra.VectorSpace
 
+        , Control.WellFounded.Ordinals
         , Control.Delayed
         , Control.Isomorphism.Primitives
         , Control.Monad.Syntax
         , Control.Partial
         , Control.Pipeline
-        , Control.Ordinals
 
         , Control.ST
         , Control.ST.Exception
