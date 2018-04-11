@@ -1,3 +1,9 @@
+module Control.WellFounded.VLT
+
+import Data.Vect
+
+%access public export
+%default total
 
 ||| Vector LT: Proofs that `xs` is lexicographically less than `ys`
 ||| @ xs the smaller small ordinal

@@ -4,9 +4,10 @@
 ||| functions where the decreasing argument can't be mapped monotonically
 ||| into Nat, or where no single argument is strictly decreasing, but some
 ||| combination of arguments is.
-module Control.Ordinals
+module Control.WellFounded.Ordinals
 
 import Data.Vect
+import public Control.WellFounded.VLT
 
 %default total
 %access public export
