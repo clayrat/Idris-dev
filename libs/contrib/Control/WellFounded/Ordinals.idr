@@ -131,6 +131,12 @@ sOrdLtTransitive (SOrdLTDegree deglt) (SOrdLTCoefs coefslt) = SOrdLTDegree deglt
 sOrdLtTransitive (SOrdLTCoefs coefslt) (SOrdLTDegree deglt) = SOrdLTDegree deglt
 sOrdLtTransitive (SOrdLTCoefs zsLTys) (SOrdLTCoefs ysLTxs) = SOrdLTCoefs $ vltTransitive zsLTys ysLTxs
 
+sOrdLteTransitive : z `SOrdLTE` y -> y `SOrdLTE` x -> z `SOrdLTE` x
+sOrdLteTransitive (Left zy)    (Left yx)    = Left $ sOrdLtTransitive zy yx
+sOrdLteTransitive (Left zy)    (Right Refl) = Left zy
+sOrdLteTransitive (Right Refl) (Left yx)    = Left yx
+sOrdLteTransitive (Right Refl) (Right Refl) = Right Refl
+
 sOrdHeadSuccRight : (xLTy:y `SOrdLT` MkSmallOrd (S xd') (xh::xt)) -> 
                     (y `SOrdLT` MkSmallOrd (S xd') (S xh::xt) {proper=NoLeadZCons _})
 sOrdHeadSuccRight (SOrdLTDegree deglt) = SOrdLTDegree deglt
@@ -186,11 +192,6 @@ lteSuccRight (LTESucc x) = LTESucc (lteSuccRight x)
 ||| n + 1 < m implies n < m
 lteSuccLeft : LTE (S n) m -> LTE n m
 lteSuccLeft (LTESucc x) = lteSuccRight x
-
-||| `LTE` is transitive
-lteTransitive : LTE n m -> LTE m p -> LTE n p
-lteTransitive LTEZero y = LTEZero
-lteTransitive (LTESucc x) (LTESucc y) = LTESucc (lteTransitive x y)
 
 lteAddRight : (n : Nat) -> LTE n (plus n m)
 lteAddRight Z = LTEZero
